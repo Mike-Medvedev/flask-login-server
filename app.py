@@ -3,7 +3,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import db_utils
 import pyodbc
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, verify_jwt_in_request, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, verify_jwt_in_request, get_jwt_identity, get_jwt
 import secrets
 import logging
 
@@ -75,8 +75,3 @@ def verify():
     except Exception as e:
         print('Error verifying jwt in request:', e)
         return jsonify(message=str(e)), 401
-
-# if __name__ == '__app__':
-#     app.run(debug=True)
-
-   
