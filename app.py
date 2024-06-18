@@ -3,17 +3,19 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 import db_utils
 import pyodbc
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, verify_jwt_in_request, get_jwt_identity
 import secrets
+import logging
 
 app = Flask(__name__)
 bcrypt = Bcrypt(app)
 CORS(app)
 jwt = JWTManager(app)
-secret_key = secrets.token_urlsafe(32)
-# with open('/Users/michaelmedvedev/Coding/keys/pubkeyfile.pem', 'r') as key_file:
-#     app.config['JWT_SECRET_KEY'] = key_file.read().strip()
-app.config['JWT_SECRET_KEY'] = secret_key
+app.config.from_pyfile('config.py')
+app.config['JWT_SECRET_KEY'] = app.config['SECRET_KEY']
+app.config['JWT_ALGORITHM'] = app.config['ALGO']
+
+logging.basicConfig(level=logging.INFO)
 
 @app.route("/")
 def handle_get():
@@ -30,7 +32,9 @@ def login():
     try:  
         if 'username' in request_data and 'password' in request_data:
             data = db_utils.login(request_data, bcrypt)
-            access_token = create_access_token(identity=data.get('username'))
+            access_token = create_access_token(identity=request_data['username'])
+            app.logger.info(f"Created access token: {access_token}")
+            print(access_token)
             return jsonify({"data": data, "access_token": access_token}), 200
         else:
             raise ValueError('Invalid content')
@@ -58,5 +62,21 @@ def signup():
         print('error occured trying to signup', e)
         response = jsonify({'Error': str(e)})
         return response, 500
+
+
+@app.route('/verify', methods=["POST"])
+@jwt_required()
+def verify():
+    try:
+        verify_jwt_in_request()  # Verify JWT in the request
+        current_user = get_jwt_identity()
+        print('Current user:', current_user)
+        return jsonify(message='Token successfully verified'), 200
+    except Exception as e:
+        print('Error verifying jwt in request:', e)
+        return jsonify(message=str(e)), 401
+
+if __name__ == '__app__':
+    app.run(debug=True)
 
    
