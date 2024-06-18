@@ -76,7 +76,7 @@ def verify():
         print('Error verifying jwt in request:', e)
         return jsonify(message=str(e)), 401
 
-if __name__ == '__app__':
-    app.run(debug=True)
+# if __name__ == '__app__':
+#     app.run(debug=True)
 
    
