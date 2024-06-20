@@ -92,7 +92,7 @@ def get_guitars():
     try:
         conn = connect()
         cursor = conn.cursor()
-        cursor.execute('SELECT brand, model, color, year FROM guitars')
+        cursor.execute('SELECT * FROM guitars')
         result = cursor.fetchall()
         print(result)
         t_result = tuple(result)
@@ -102,7 +102,7 @@ def get_guitars():
         guitar_list = [tuple(x) for x in result ]
         print(type(guitar_list))
         if not result:
-            raise ValueError('Error getting guitar data')
+            return json.dumps({"data": [], "message": "No records found"})
 
         cursor.commit()
         return json.dumps({"data": guitar_list})
@@ -135,6 +135,27 @@ def create_guitar(data):
         cursor.rollback()
         print('error caught: ', e)
         raise
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def delete():
+    delete_query = """
+DELETE FROM guitars 
+WHERE guitar_id = (SELECT MAX(guitar_id) FROM guitars)
+"""
+    try:
+        conn = connect()
+        cursor = conn.cursor()
+        cursor.execute(delete_query)
+
+        conn.commit()
+
+        return 'Deleted record successfully'
+    except Exception as e:
+        print('error deleting data', e)
+        conn.rollback()
     finally:
         cursor.close()
         conn.close()

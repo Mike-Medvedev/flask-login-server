@@ -34,7 +34,6 @@ def login():
             data = db_utils.login(request_data, bcrypt)
             access_token = create_access_token(identity=request_data['username'])
             app.logger.info(f"Created access token: {access_token}")
-            print(access_token)
             return jsonify({"data": data, "access_token": access_token}), 200
         else:
             raise ValueError('Invalid content')
@@ -111,4 +110,16 @@ def create():
         
     except Exception as e:
         print('Error creating guitars: ', e)
+        return jsonify(message=str(e))
+
+@app.route('/delete', methods=["DELETE"])
+@jwt_required()
+def delete():
+    try: 
+        verify_jwt_in_request()
+        user = get_jwt_identity()
+        message = db_utils.delete()
+        return jsonify(message=message), 200
+    except Exception as e:
+        print('error deleting records', e)
         return jsonify(message=str(e))
