@@ -123,3 +123,18 @@ def delete():
     except Exception as e:
         print('error deleting records', e)
         return jsonify(message=str(e))
+
+@app.route('/update/<int:id>', methods=["PUT"])
+@jwt_required()
+def update(id):
+    try:
+        data = request.get_json()
+        verify_jwt_in_request()
+        current_user = get_jwt_identity()
+        message = db_utils.update(id, data)
+        print('id is: ', id)
+
+        return message ,200
+    except Exception as e:
+        print('error getting id: ', e)
+        return str(e), 500

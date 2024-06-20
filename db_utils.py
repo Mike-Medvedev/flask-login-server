@@ -159,3 +159,24 @@ WHERE guitar_id = (SELECT MAX(guitar_id) FROM guitars)
     finally:
         cursor.close()
         conn.close()
+def update(id, data):
+    brand = data.get('brand', None)
+    model = data.get('model', None)
+    color = data.get('color', None)
+    year = data.get('year', None)
+    try:
+        conn = connect()
+        cursor = conn.cursor()
+        cursor.execute('UPDATE guitars SET brand=?, model=?, color=?, year=? WHERE guitar_id=?', (brand, model, color, year, id))
+
+        cursor.commit()
+        return json.dumps({"message": f'successfully updated record where id is {id}'})
+    except Exception as e:
+        print('error caught during updation: ', e)
+        cursor.rollback()
+        raise
+
+
+    finally:
+        cursor.close()
+        conn.close()
