@@ -68,10 +68,47 @@ def signup():
 @jwt_required()
 def verify():
     try:
-        verify_jwt_in_request()  # Verify JWT in the request
+        verify_jwt_in_request()  
         current_user = get_jwt_identity()
         print('Current user:', current_user)
         return jsonify(message='Token successfully verified'), 200
     except Exception as e:
         print('Error verifying jwt in request:', e)
         return jsonify(message=str(e)), 401
+
+@app.route('/users', methods=["GET"])
+@jwt_required()
+def get_users():
+    try:
+        user_id = get_jwt_identity()
+        user = db_utils.get_users(user_id)
+        return user, 200
+    except Exception as e:
+        print('Error getting user: ', e)
+        return jsonify(message=str(e))
+
+@app.route('/guitars', methods=["GET"])
+@jwt_required()
+def get_guitars():
+    try: 
+        verify_jwt_in_request()
+        guitars = db_utils.get_guitars()
+        response = guitars
+        return response, 200
+    except Exception as e:
+        print('Error getting guitars: ', e)
+        return jsonify(message=str(e))
+
+@app.route('/create', methods=["POST"])
+@jwt_required()
+def create():
+    data = request.get_json()
+    try: 
+        # if 'brand' in request_data and 'model' in request_data and 'color' in request_data and 'year' in request_data:
+        verify_jwt_in_request()
+        response = db_utils.create_guitar(data)
+        return response, 200
+        
+    except Exception as e:
+        print('Error creating guitars: ', e)
+        return jsonify(message=str(e))
