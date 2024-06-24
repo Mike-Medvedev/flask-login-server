@@ -201,7 +201,12 @@ def updateChanges(data):
             model = data[record].get(f'model-{record}', None)
             color = data[record].get(f'color-{record}', None)
             year = data[record].get(f'year-{record}', None)
-            cursor.execute('UPDATE guitars SET brand=?, model=?, color=?, year=? WHERE guitar_id=?', (brand, model, color, year, _id))
+
+            if _id:
+                cursor.execute('UPDATE guitars SET brand=?, model=?, color=?, year=? WHERE guitar_id=?', (brand, model, color, year, _id))
+
+            if not _id:
+                cursor.execute('INSERT INTO guitars VALUES (?, ?, ?, ?)', (brand, model, color, year))    
 
         cursor.commit()
         return json.dumps({"message": f'successfully updated records'})
