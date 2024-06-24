@@ -138,3 +138,17 @@ def update(id):
     except Exception as e:
         print('error getting id: ', e)
         return str(e), 500
+
+@app.route('/update', methods=["PUT"])
+@jwt_required()
+def updateChanges():
+    try:
+        data = request.get_json()
+        verify_jwt_in_request()
+        current_user = get_jwt_identity()
+        message = db_utils.updateChanges(data)
+
+        return message ,200
+    except Exception as e:
+        print('error updating: ', e)
+        return str(e), 500

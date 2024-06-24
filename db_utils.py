@@ -1,6 +1,13 @@
 import pyodbc
 import json
+from sqlalchemy import create_engine
+import sqlalchemy.pool as pool
 
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger("database_pooling")
 
 
 
@@ -8,7 +15,19 @@ import json
 def connect():
     connectionString = "Driver={ODBC Driver 18 for SQL Server};Server=tcp:guitars.database.windows.net,1433;Database=store;Uid=CloudSA61792ed2;Pwd=vQLcu4zWvKTPgu2;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
     conn = pyodbc.connect(connectionString)
+    logger.debug("New connection created")
     return conn
+
+mypool = pool.QueuePool(connect, max_overflow=10, pool_size=5)
+
+def connect_pool():
+    conn = mypool.connect()
+    logger.debug("Connection checked out from pool")
+    return conn
+
+def return_connection_to_pool(conn):
+    return_connection_to_pool(conn)
+    logger.debug("Connection returned to pool")
     
 def signup(data, bcrypt):
     username = data['username']
@@ -16,7 +35,7 @@ def signup(data, bcrypt):
     pw_hash = bcrypt.generate_password_hash(password).decode('utf-8')
     
     try:
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         cursor.execute("INSERT INTO Customers (username, password) VALUES (?, ?)", (username, pw_hash))
         conn.commit()
@@ -29,7 +48,7 @@ def signup(data, bcrypt):
         raise 
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
 
 def login(data, bcrypt):
     username=data['username']
@@ -38,7 +57,7 @@ def login(data, bcrypt):
     print('entered username and password', username, password)
     
     try:
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         # Retrieve the stored password hash for the given username
         cursor.execute("SELECT password FROM Customers WHERE username=?", (username,))
@@ -63,11 +82,11 @@ def login(data, bcrypt):
 
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
 
 def get_users(user_id):
     try:
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         cursor.execute('SELECT username FROM Customers WHERE username=?', (user_id,))
         result = cursor.fetchone()
@@ -86,11 +105,11 @@ def get_users(user_id):
         raise
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
 
 def get_guitars():
     try:
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM guitars')
         result = cursor.fetchall()
@@ -112,7 +131,7 @@ def get_guitars():
         raise
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
 
 def create_guitar(data):
     brand = data.get('brand', None)
@@ -124,7 +143,7 @@ def create_guitar(data):
     
     try:
         
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         cursor.execute('INSERT INTO guitars (brand, model, color, year) VALUES (?, ?, ?, ?)', (brand, model, color, year, ))
 
@@ -137,7 +156,7 @@ def create_guitar(data):
         raise
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
 
 
 def delete():
@@ -146,7 +165,7 @@ DELETE FROM guitars
 WHERE guitar_id = (SELECT MAX(guitar_id) FROM guitars)
 """
     try:
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         cursor.execute(delete_query)
 
@@ -158,14 +177,14 @@ WHERE guitar_id = (SELECT MAX(guitar_id) FROM guitars)
         conn.rollback()
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
 def update(id, data):
     brand = data.get('brand', None)
     model = data.get('model', None)
     color = data.get('color', None)
     year = data.get('year', None)
     try:
-        conn = connect()
+        conn = connect_pool()
         cursor = conn.cursor()
         cursor.execute('UPDATE guitars SET brand=?, model=?, color=?, year=? WHERE guitar_id=?', (brand, model, color, year, id))
 
@@ -179,4 +198,29 @@ def update(id, data):
 
     finally:
         cursor.close()
-        conn.close()
+        return_connection_to_pool(conn)
+
+def updateChanges(data):
+    try:
+        conn = connect_pool()
+        cursor = conn.cursor()
+        print('printing data: ', data)
+        for record in data:
+            _id = data[record].get('id', None)
+            brand = data[record].get(f'brand-{record}', None)
+            model = data[record].get(f'model-{record}', None)
+            color = data[record].get(f'color-{record}', None)
+            year = data[record].get(f'year-{record}', None)
+            cursor.execute('UPDATE guitars SET brand=?, model=?, color=?, year=? WHERE guitar_id=?', (brand, model, color, year, _id))
+
+        cursor.commit()
+        return json.dumps({"message": f'successfully updated records'})
+    except Exception as e:
+        print('error caught during updation: ', e)
+        cursor.rollback()
+        raise
+
+
+    finally:
+        cursor.close()
+        return_connection_to_pool(conn)
