@@ -12,14 +12,12 @@ def connect():
     conn = pyodbc.connect(connectionString)
     return conn
 
-mypool = pool.QueuePool(connect, max_overflow=10, pool_size=5)
+mypool = pool.QueuePool(connect, max_overflow=10, pool_size=10)
+
 
 def connect_pool():
     conn = mypool.connect()
     return conn
-
-def return_connection_to_pool(conn):
-    return_connection_to_pool(conn)
     
 def signup(data, bcrypt):
     username = data['username']
@@ -40,7 +38,7 @@ def signup(data, bcrypt):
         raise 
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 
 def login(data, bcrypt):
     username=data['username']
@@ -74,7 +72,7 @@ def login(data, bcrypt):
 
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 
 def get_users(user_id):
     try:
@@ -97,7 +95,7 @@ def get_users(user_id):
         raise
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 
 def get_guitars():
     try:
@@ -123,7 +121,7 @@ def get_guitars():
         raise
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 
 def create_guitar(data):
     brand = data.get('brand', None)
@@ -148,7 +146,7 @@ def create_guitar(data):
         raise
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 
 
 def delete():
@@ -169,7 +167,7 @@ WHERE guitar_id = (SELECT MAX(guitar_id) FROM guitars)
         conn.rollback()
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 def update(id, data):
     brand = data.get('brand', None)
     model = data.get('model', None)
@@ -190,7 +188,7 @@ def update(id, data):
 
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
 
 def updateChanges(data):
     try:
@@ -215,4 +213,4 @@ def updateChanges(data):
 
     finally:
         cursor.close()
-        return_connection_to_pool(conn)
+        conn.close()
