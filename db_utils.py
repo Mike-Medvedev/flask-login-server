@@ -3,11 +3,6 @@ import json
 from sqlalchemy import create_engine
 import sqlalchemy.pool as pool
 
-import logging
-
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger("database_pooling")
 
 
 
@@ -15,19 +10,16 @@ logger = logging.getLogger("database_pooling")
 def connect():
     connectionString = "Driver={ODBC Driver 18 for SQL Server};Server=tcp:guitars.database.windows.net,1433;Database=store;Uid=CloudSA61792ed2;Pwd=vQLcu4zWvKTPgu2;Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
     conn = pyodbc.connect(connectionString)
-    logger.debug("New connection created")
     return conn
 
 mypool = pool.QueuePool(connect, max_overflow=10, pool_size=5)
 
 def connect_pool():
     conn = mypool.connect()
-    logger.debug("Connection checked out from pool")
     return conn
 
 def return_connection_to_pool(conn):
     return_connection_to_pool(conn)
-    logger.debug("Connection returned to pool")
     
 def signup(data, bcrypt):
     username = data['username']
